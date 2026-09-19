@@ -2,14 +2,7 @@
 
 import { useMandalaStore } from "@/store/useMandalaStore";
 import { Panel } from "@/components/ui/Panel";
-
-const PALETTES: Array<{ name: string; pattern: string; background: string }> = [
-  { name: "Classic", pattern: "#1f2937", background: "#ffffff" },
-  { name: "Indigo Night", pattern: "#e0e7ff", background: "#1e1b4b" },
-  { name: "Sunset", pattern: "#7c2d12", background: "#fed7aa" },
-  { name: "Forest", pattern: "#f0fdf4", background: "#14532d" },
-  { name: "Rose Gold", pattern: "#881337", background: "#ffe4e6" },
-];
+import { PALETTES } from "@/lib/mandala/presets";
 
 export function ColorControls() {
   const patternColor = useMandalaStore((s) => s.patternColor);

@@ -1,4 +1,4 @@
-import type { RingGeometry } from "@/types/mandala";
+import type { MotifBox, RingGeometry } from "@/types/mandala";
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -6,72 +6,83 @@ export function clamp(value: number, min: number, max: number): number {
 
 interface RingRadiiParams {
   ringCount: number;
-  /** Normalized 0..1 spacing control ("small" .. "large" gap between rings). */
+  /** Normalized 0..1 spacing control: 0 = rings touch, 1 = widest gaps. */
   ringSpacing: number;
   minRadius: number;
   maxRadius: number;
+  /** Relative radial width per ring (defaults to 1 each). */
+  weights?: number[];
 }
 
-/**
- * The floor a ring's step can shrink to at ringSpacing=0. Keeping this above
- * zero (rather than letting rings collapse on top of each other) keeps the
- * densest setting still legible, while ringSpacing=1 spreads rings across the
- * full available radius — so the whole mandala always stays within
- * [minRadius, maxRadius] no matter what the user picks.
- */
-const MIN_STEP_RATIO = 0.4;
+/** Largest share of a ring's radial step that can become empty gap. */
+const MAX_GAP_RATIO = 0.7;
 
-/** Portion of each ring's radial step given to the decorative band itself
- * (the remainder becomes the visual gap to the next ring). */
-const THICKNESS_RATIO = 0.62;
+const MAX_REPETITIONS = 360;
 
 /**
- * Computes the centerline radius, band thickness, and inner/outer bounds for
- * every ring, purely from center-relative inputs. Never hardcodes pixel
- * positions — everything derives from ringCount, ringSpacing, and the
- * min/max radius the canvas has available.
+ * Splits the annulus [minRadius, maxRadius] into one radial step per ring
+ * (proportional to its weight), then carves a gap out of each step. Because
+ * the steps always sum to the available space, the mandala fills its canvas
+ * and can never overflow it, whatever the spacing or ring count.
  */
 export function calculateRingRadii({
   ringCount,
   ringSpacing,
   minRadius,
   maxRadius,
+  weights,
 }: RingRadiiParams): RingGeometry[] {
   if (ringCount <= 0 || maxRadius <= minRadius) return [];
 
   const available = maxRadius - minRadius;
-  const maxStep = available / ringCount;
-  const minStep = maxStep * MIN_STEP_RATIO;
-  const step = minStep + (maxStep - minStep) * clamp(ringSpacing, 0, 1);
-  const thickness = step * THICKNESS_RATIO;
+  const ringWeights = Array.from({ length: ringCount }, (_, i) => Math.max(0.1, weights?.[i] ?? 1));
+  const totalWeight = ringWeights.reduce((sum, weight) => sum + weight, 0);
+  const gapRatio = clamp(ringSpacing, 0, 1) * MAX_GAP_RATIO;
 
-  const rings: RingGeometry[] = [];
-  for (let index = 0; index < ringCount; index++) {
-    const radius = minRadius + step * (index + 0.5);
-    rings.push({
+  let stepStart = minRadius;
+  return ringWeights.map((weight, index) => {
+    const step = (available * weight) / totalWeight;
+    const thickness = step * (1 - gapRatio);
+    const radius = stepStart + step / 2;
+    stepStart += step;
+    return {
       index,
       radius,
       thickness,
       innerRadius: radius - thickness / 2,
       outerRadius: radius + thickness / 2,
-    });
-  }
-  return rings;
+    };
+  });
 }
 
-/** Clamps the shared rotational-symmetry control to a sane repetition count. */
-export function calculatePatternCount(symmetry: number): number {
-  return Math.max(3, Math.round(symmetry));
+interface PatternCountParams {
+  radius: number;
+  thickness: number;
+  aspect: number;
+  symmetry: number;
+  density: number;
 }
 
 /**
- * Derives how large a single motif should be drawn so that `count` evenly
- * spaced repetitions fill the ring's circumference without overlapping or
- * looking sparse — i.e. patternWidth = circumference / count, capped by the
- * ring's radial thickness so tall motifs don't bleed into neighboring rings.
+ * How many motifs fit around a ring: circumference / motifWidth, where
+ * motifWidth = thickness * aspect. The result is snapped to a multiple of the
+ * global symmetry fold so spokes still line up across rings.
  */
-export function calculateMotifSize(ring: RingGeometry, count: number): number {
-  const circumference = 2 * Math.PI * ring.radius;
-  const arcLength = circumference / count;
-  return Math.max(2, Math.min(arcLength * 0.86, ring.thickness * 1.5));
+export function calculatePatternCount({
+  radius,
+  thickness,
+  aspect,
+  symmetry,
+  density,
+}: PatternCountParams): number {
+  const fold = Math.max(1, Math.round(symmetry));
+  const motifWidth = Math.max(thickness * aspect, 1e-3);
+  const ideal = ((2 * Math.PI * radius) / motifWidth) * density;
+  const folds = clamp(Math.round(ideal / fold), 1, Math.floor(MAX_REPETITIONS / fold));
+  return folds * fold;
+}
+
+/** Square footprint a motif should scale itself to: as tall as the band, unless the cell is too narrow for its aspect. */
+export function calculateMotifSize(box: MotifBox, aspect: number): number {
+  return Math.max(2, Math.min(box.height, box.width / aspect));
 }

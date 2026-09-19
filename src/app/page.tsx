@@ -3,6 +3,8 @@ import { RingSelector } from "@/components/mandala/RingSelector";
 import { PatternLibrary } from "@/components/controls/PatternLibrary";
 import { RingControls } from "@/components/controls/RingControls";
 import { SpacingControl } from "@/components/controls/SpacingControl";
+import { PresetControls } from "@/components/controls/PresetControls";
+import { SelectedRingControls } from "@/components/controls/SelectedRingControls";
 import { ColorControls } from "@/components/controls/ColorControls";
 import { ExportControls } from "@/components/controls/ExportControls";
 
@@ -25,10 +27,12 @@ export default function Home() {
         </section>
 
         <section className="flex flex-col gap-6">
+          <PresetControls />
           <RingControls />
           <SpacingControl />
           <RingSelector />
           <PatternLibrary />
+          <SelectedRingControls />
           <ColorControls />
           <ExportControls />
         </section>

@@ -9,7 +9,7 @@ export function SpacingControl() {
   const setRingSpacing = useMandalaStore((s) => s.setRingSpacing);
 
   return (
-    <Panel title="Ring Spacing" description="Controls the gap between neighboring rings.">
+    <Panel title="Ring Spacing" description="The gap between neighboring rings. At 0% they touch.">
       <Slider
         id="ring-spacing"
         label="Spacing"

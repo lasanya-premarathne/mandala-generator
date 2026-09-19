@@ -25,8 +25,9 @@ export function MandalaCanvas() {
   const ringCount = useMandalaStore((s) => s.ringCount);
   const ringSpacing = useMandalaStore((s) => s.ringSpacing);
   const symmetry = useMandalaStore((s) => s.symmetry);
-  const ringPatterns = useMandalaStore((s) => s.ringPatterns);
-  const ringColors = useMandalaStore((s) => s.ringColors);
+  const density = useMandalaStore((s) => s.density);
+  const centerSize = useMandalaStore((s) => s.centerSize);
+  const rings = useMandalaStore((s) => s.rings);
   const patternColor = useMandalaStore((s) => s.patternColor);
   const backgroundColor = useMandalaStore((s) => s.backgroundColor);
 
@@ -57,10 +58,10 @@ export function MandalaCanvas() {
 
     drawMandala(
       ctx,
-      { ringCount, ringSpacing, symmetry, ringPatterns, ringColors, patternColor, backgroundColor },
+      { ringCount, ringSpacing, symmetry, density, centerSize, rings, patternColor, backgroundColor },
       { size: displaySize },
     );
-  }, [displaySize, ringCount, ringSpacing, symmetry, ringPatterns, ringColors, patternColor, backgroundColor]);
+  }, [displaySize, ringCount, ringSpacing, symmetry, density, centerSize, rings, patternColor, backgroundColor]);
 
   return (
     <div
